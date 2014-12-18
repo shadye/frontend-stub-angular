@@ -1,7 +1,11 @@
-var webpack = require("webpack");
-var ngAnnotatePlugin = require('ng-annotate-webpack-plugin');
-//var AngularPlugin = require('angular-webpack-plugin');
-var path = require('path');
+var webpack = require("webpack"),
+    ngAnnotatePlugin = require('ng-annotate-webpack-plugin'),
+  //AngularPlugin = require('angular-webpack-plugin'),
+    path = require('path'),
+    ExtractTextPlugin = require("extract-text-webpack-plugin"),
+    autoprefixer = require('autoprefixer-core'),
+    csswring = require('csswring'),
+    ngMin = require('ngmin-webpack-plugin');
 
 // Commandline arguments
 // 
@@ -45,8 +49,8 @@ var config = {
         //'ui.router':'angular-ui-router'
       },
 
-      // Check NPM and Bower for components.
-      modulesDirectories: ["node_modules", "web_modules","bower_components"]
+      // Check NPM and Bower for components. Also link to blocks.
+      modulesDirectories: ["node_modules", "web_modules","bower_components", "src/blocks"]
   },
   module:{
     loaders:[
@@ -55,7 +59,7 @@ var config = {
       // Support for CSS (with hot module replacement)
       { test: /\.css$/,                     loader: "style-loader!css-loader" },
       // Support for LESS (with hot module replacement)
-      { test: /\.less$/,                    loader: "style-loader!css-loader!less-loader" },
+      { test: /\.styl/,                    loaders: ["style", "css", "postcss", "stylus"] },
       // Copy all assets in to asset folder (use hash filename)
       { test: /\.(png|jpg|gif|woff|eot|ttf|svg)$/,      loader: "file-loader?name=assets/[hash].[ext]" },
       // Load all *.jade as templates
@@ -66,6 +70,7 @@ var config = {
       { test: /index[a-z-]*\.html$/,        loader: "file-loader?name=[path][name].html&context=./src" },
     ]
   },
+  postcss: [ autoprefixer, csswring],
   plugins:[
     // Add Bower support
     new webpack.ResolverPlugin(
@@ -111,19 +116,20 @@ if(argv.minify){
   // Remove sourcemaps
   delete config.devtool;
 
-  // Add UglifyJS
-  config.plugins.push(new webpack.optimize.UglifyJsPlugin({
-    mangle:true,
-    compress:{
-      drop_console:true
-    },
-    output: {
-      comments: false
-    }
-  }));
-
-  // Optimize OccuranceOrder
   config.plugins.push(
+    //Add ngMin
+    new ngMin(),
+    //and UglifyJS
+    new webpack.optimize.UglifyJsPlugin({
+      mangle:false,//<-need for angular work
+      compress:{
+        drop_console:true
+      },
+      output: {
+        comments: false
+      }
+    }),
+    // Optimize OccuranceOrder
     new webpack.optimize.OccurenceOrderPlugin(true)
   );
 }
